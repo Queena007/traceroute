@@ -1,4 +1,4 @@
-from socket import *
+from traceroute import get_route
 import os
 import sys
 import struct
