@@ -71,7 +71,6 @@ def get_route(hostname):
 
     for ttl in range(1, MAX_HOPS):
         for tries in range(TRIES):
-            timeLeft = TIMEOUT * (tries + 1)  # Increase timeLeft with each try
             icmp = getprotobyname("icmp")
             mySocket = socket(AF_INET, SOCK_RAW, icmp)
 
@@ -83,7 +82,7 @@ def get_route(hostname):
                 mySocket.sendto(d, (hostname, 0))
                 t = time.time()
                 startedSelect = time.time()
-                whatReady = select.select([mySocket], [], [], timeLeft)
+                whatReady = select.select([mySocket], [], [], TIMEOUT)
                 howLongInSelect = (time.time() - startedSelect)
                 if not whatReady[0]:  # No response received
                     timeout_occurred = True
@@ -99,7 +98,7 @@ def get_route(hostname):
             try:
                 recvPacket, addr = mySocket.recvfrom(1024)
                 timeReceived = time.time()
-                timeLeft = timeLeft - howLongInSelect
+                timeLeft = TIMEOUT - howLongInSelect
             except timeout:
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
