@@ -64,6 +64,8 @@ def build_packet():
     packet = header + data
     return packet
 
+class Timeout(Exception):
+    pass
 
 def get_route(hostname):
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
