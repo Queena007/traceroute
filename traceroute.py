@@ -96,36 +96,36 @@ def get_route(hostname):
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
 
-
-            except Exception as e:
-                print(e)  
+            try:
+                recvPacket, addr = mySocket.recvfrom(1024)
+                timeReceived = time.time()
+                timeLeft = timeLeft - howLongInSelect
+            except timeout:
                 continue
 
+            icmpHeader = recvPacket[20:28]
+            types, code, checksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
 
+            try:
+                router_hostname = gethostbyaddr(addr[0])[0]
+            except herror:
+                router_hostname = "hostname not returnable"
 
+            if types == 11:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "TTL Exceeded"}, ignore_index=True)
+            elif types == 3:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Destination Unreachable"}, ignore_index=True)
+            elif types == 0:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
+                return df
             else:
-                icmpHeader = recvPacket[20:28]
-                types, code, checksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
-
-                try:
-                    router_hostname = gethostbyaddr(addr[0])[0]
-                except herror:
-                    router_hostname = "hostname not returnable"
-
-                if types == 11:
-                    df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "TTL Exceeded"}, ignore_index=True)
-                elif types == 3:
-                    df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Destination Unreachable"}, ignore_index=True)
-                elif types == 0:
-                    df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
-                    return df
-                else:
-                    df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Error"}, ignore_index=True)
-                break
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Error"}, ignore_index=True)
+            break
     print(df)
     return df
 
 
 if __name__ == '__main__':
     get_route("google.co.il")
+
 
