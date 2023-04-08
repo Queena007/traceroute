@@ -10,7 +10,7 @@ from socket import herror
 
 ICMP_ECHO_REQUEST = 8
 MAX_HOPS = 60
-TIMEOUT = 5.0
+TIMEOUT = 2.0
 TRIES = 1
 
 def checksum(string):
