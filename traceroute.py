@@ -90,8 +90,8 @@ def get_route(hostname):
                     timeReceived = time.time()
                     timeLeft = timeLeft - howLongInSelect
                 else:
-                    raise timeout()  # Raise a timeout exception if no response
-            except timeout:
+                    raise TimeoutError()  # Raise a timeout exception if no response
+            except TimeoutError:
                 print("*    *    * Request timed out.")
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
@@ -122,6 +122,7 @@ def get_route(hostname):
                 break
     print(df)
     return df
+
 
 if __name__ == '__main__':
     get_route("google.co.il")
