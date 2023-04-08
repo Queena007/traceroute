@@ -89,16 +89,14 @@ def get_route(hostname):
                     timeReceived = time.time()
                     timeLeft = timeLeft - howLongInSelect
                 else:
-                    raise Timeout()  # Raise a custom timeout exception if no response
-            except Timeout:
+                    raise timeout()  # Raise a timeout exception if no response
+            except timeout:
                 print("*    *    * Request timed out.")
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
             except Exception as e:
                 print(e)  # uncomment to view exceptions
                 continue
-
-
 
             else:
                 icmpHeader = recvPacket[20:28]
