@@ -64,9 +64,6 @@ def build_packet():
     packet = header + data
     return packet
 
-class Timeout(Exception):
-    pass
-
 def get_route(hostname):
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
     destAddr = gethostbyname(hostname)
@@ -102,7 +99,7 @@ def get_route(hostname):
                 recvPacket, addr = mySocket.recvfrom(1024)
                 timeReceived = time.time()
                 timeLeft = timeLeft - howLongInSelect
-            except timeout:
+            except Timeout:
                 continue
 
             icmpHeader = recvPacket[20:28]
