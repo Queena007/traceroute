@@ -64,6 +64,7 @@ def build_packet():
     packet = header + data
     return packet
 
+
 def get_route(hostname):
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
     destAddr = gethostbyname(hostname)
@@ -99,7 +100,8 @@ def get_route(hostname):
                 recvPacket, addr = mySocket.recvfrom(1024)
                 timeReceived = time.time()
                 timeLeft = timeLeft - howLongInSelect
-            except Timeout:
+            except timeout:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
 
             icmpHeader = recvPacket[20:28]
@@ -124,7 +126,9 @@ def get_route(hostname):
     return df
 
 
+
 if __name__ == '__main__':
     get_route("google.co.il")
+
 
 
