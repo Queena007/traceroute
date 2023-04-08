@@ -68,7 +68,7 @@ def build_packet():
 def get_route(hostname):
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
     destAddr = gethostbyname(hostname)
-   
+
     for ttl in range(1, MAX_HOPS):
         for tries in range(TRIES):
             timeLeft = TIMEOUT * (tries + 1)  # Increase timeLeft with each try
@@ -76,27 +76,25 @@ def get_route(hostname):
             mySocket = socket(AF_INET, SOCK_RAW, icmp)
 
             mySocket.setsockopt(IPPROTO_IP, IP_TTL, struct.pack('I', ttl))
-            def get_route(hostname):
-    
-    mySocket.settimeout(TIMEOUT)
-    timeout_occurred = False
-    try:
-        d = build_packet()
-        mySocket.sendto(d, (hostname, 0))
-        t = time.time()
-        startedSelect = time.time()
-        whatReady = select.select([mySocket], [], [], timeLeft)
-        howLongInSelect = (time.time() - startedSelect)
-        if not whatReady[0]:  # No response received
-            timeout_occurred = True
-    except Exception as e:
-        print(e)  
-        continue
+            mySocket.settimeout(TIMEOUT)
+            timeout_occurred = False
+            try:
+                d = build_packet()
+                mySocket.sendto(d, (hostname, 0))
+                t = time.time()
+                startedSelect = time.time()
+                whatReady = select.select([mySocket], [], [], timeLeft)
+                howLongInSelect = (time.time() - startedSelect)
+                if not whatReady[0]:  # No response received
+                    timeout_occurred = True
+            except Exception as e:
+                print(e)
+                continue
 
-    if timeout_occurred:
-        print("*    *    * Request timed out.")
-        df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
-        continue
+            if timeout_occurred:
+                print("*    *    * Request timed out.")
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                continue
 
 
             except Exception as e:
