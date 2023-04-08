@@ -73,7 +73,6 @@ def get_route(hostname):
    
     for ttl in range(1, MAX_HOPS):
         for tries in range(TRIES):
- 
             icmp = getprotobyname("icmp")
             mySocket = socket(AF_INET, SOCK_RAW, icmp)
 
@@ -86,18 +85,21 @@ def get_route(hostname):
                 startedSelect = time.time()
                 whatReady = select.select([mySocket], [], [], timeLeft)
                 howLongInSelect = (time.time() - startedSelect)
-                if not whatReady[0]:  # Timeout
-                    print("*    *    * Request timed out.")
-                    df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
-                recvPacket, addr = mySocket.recvfrom(1024)
-                timeReceived = time.time()
-                timeLeft = timeLeft - howLongInSelect
-
-                if timeLeft <= 0:
-                    df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                if whatReady[0]:  # Received a response
+                    recvPacket, addr = mySocket.recvfrom(1024)
+                    timeReceived = time.time()
+                    timeLeft = timeLeft - howLongInSelect
+                else:
+                    raise timeout()  # Raise a timeout exception if no response
+            except timeout:
+                print("*    *    * Request timed out.")
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                continue
             except Exception as e:
                 print(e)  # uncomment to view exceptions
                 continue
+     
+
 
             else:
                 icmpHeader = recvPacket[20:28]
@@ -123,3 +125,5 @@ def get_route(hostname):
 
 if __name__ == '__main__':
     get_route("google.co.il")
+
+
