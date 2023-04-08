@@ -90,7 +90,7 @@ def get_route(hostname):
                     timeLeft = timeLeft - howLongInSelect
                 else:
                     raise timeout()  # Raise a timeout exception if no response
-            except timeout:
+            except socket.timeout:
                 print("*    *    * Request timed out.")
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
