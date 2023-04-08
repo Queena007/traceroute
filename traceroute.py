@@ -10,7 +10,7 @@ from socket import herror
 
 ICMP_ECHO_REQUEST = 8
 MAX_HOPS = 60
-TIMEOUT = 2.0
+TIMEOUT = 5.0
 TRIES = 1
 
 def checksum(string):
@@ -65,14 +65,13 @@ def build_packet():
     return packet
 
 
-
 def get_route(hostname):
-    timeLeft = TIMEOUT
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
     destAddr = gethostbyname(hostname)
    
     for ttl in range(1, MAX_HOPS):
         for tries in range(TRIES):
+            timeLeft = TIMEOUT * (tries + 1)  # Increase timeLeft with each try
             icmp = getprotobyname("icmp")
             mySocket = socket(AF_INET, SOCK_RAW, icmp)
 
@@ -90,15 +89,15 @@ def get_route(hostname):
                     timeReceived = time.time()
                     timeLeft = timeLeft - howLongInSelect
                 else:
-                    raise TimeoutError()  # Raise a timeout exception if no response
-            except TimeoutError:
+                    raise Timeout()  # Raise a custom timeout exception if no response
+            except Timeout:
                 print("*    *    * Request timed out.")
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 continue
             except Exception as e:
                 print(e)  # uncomment to view exceptions
                 continue
-     
+
 
 
             else:
