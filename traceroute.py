@@ -53,6 +53,7 @@ def build_packet():
 def get_route(hostname):
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
     destAddr = gethostbyname(hostname)
+    print("Tracing route to", hostname, "(", destAddr, ")\n")
     consecutive_timeouts = 0
 
     for ttl in range(1, MAX_HOPS):
@@ -65,7 +66,7 @@ def get_route(hostname):
             timeout_occurred = False
             try:
                 d = build_packet()
-                mySocket.sendto(d, (hostname, 0))
+                mySocket.sendto(d, (destAddr, 0))
                 t = time.time()
                 startedSelect = time.time()
                 whatReady = select.select([mySocket], [], [], TIMEOUT)
@@ -90,7 +91,6 @@ def get_route(hostname):
                 timeLeft = TIMEOUT - howLongInSelect
                 consecutive_timeouts = 0
             except timeout:
-                
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
                 consecutive_timeouts += 1
                 if consecutive_timeouts >= 3:
@@ -111,6 +111,7 @@ def get_route(hostname):
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Destination Unreachable"}, ignore_index=True)
             elif types == 0:
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
+                print(df)
                 return df
             else:
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Error"}, ignore_index=True)
