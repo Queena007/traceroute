@@ -126,15 +126,3 @@ def get_route(hostname):
 if __name__ == '__main__':
     get_route("google.co.il")
 
-Ungraded
-Python Programming: Traceroute
-Inactive Submission
-Student
- Queena Zhang
-Total Points
-- / 100 pts
-
-Autograder Score
-70.0 / 100.0
-Failed Tests
-test_traceroute_1 (test_simple.Test) (70/100)
