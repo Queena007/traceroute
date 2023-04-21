@@ -110,12 +110,14 @@ def get_route(hostname):
             elif types == 3:
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Destination Unreachable"}, ignore_index=True)
             
-     elif types == 0:
-        df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
-        # Add an extra hop with a timed-out request
-        df = df.append({'Hop Count': ttl + 1, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
-        print(df)
-        return df
+    
+            elif types == 0:
+            df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
+            # Add an extra hop with a timed-out request
+            df = df.append({'Hop Count': ttl + 1, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+            print(df)
+            return df
+
    
 
             else:
