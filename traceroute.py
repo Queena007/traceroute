@@ -57,15 +57,12 @@ def get_route(hostname):
     consecutive_timeouts = 0
 
     for ttl in range(1, MAX_HOPS):
-        icmp = getprotobyname("icmp")
-        mySocket = socket(AF_INET, SOCK_RAW, icmp)
+        for tries in range(TRIES):
+            icmp = getprotobyname("icmp")
+            mySocket = socket(AF_INET, SOCK_RAW, icmp)
 
-        mySocket.setsockopt(IPPROTO_IP, IP_TTL, struct.pack('I', ttl))
-        mySocket.settimeout(TIMEOUT)
-
-        timed_out_count = 0
-
-        while timed_out_count < TRIES:
+            mySocket.setsockopt(IPPROTO_IP, IP_TTL, struct.pack('I', ttl))
+            mySocket.settimeout(TIMEOUT)
             timeout_occurred = False
             try:
                 d = build_packet()
@@ -81,52 +78,63 @@ def get_route(hostname):
                 continue
 
             if timeout_occurred:
-                timed_out_count += 1
+                print("*    *    * Request timed out.")
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                consecutive_timeouts += 1
+                if consecutive_timeouts >= 3:
+                    break
                 continue
 
             try:
                 recvPacket, addr = mySocket.recvfrom(1024)
                 timeReceived = time.time()
                 timeLeft = TIMEOUT - howLongInSelect
+                consecutive_timeouts = 0
             except timeout:
-                timed_out_count += 1
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                consecutive_timeouts += 1
+                if consecutive_timeouts >= 3:
+                    break
                 continue
 
+            icmpHeader = recvPacket[20:28]
+            types, code, checksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
+
+            try:
+                router_hostname = gethostbyaddr(addr[0])[0]
+            except herror:
+                router_hostname = "hostname not returnable"
+
+            if types == 11:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "TTL Exceeded"}, ignore_index=True)
+            elif types == 3:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Destination Unreachable"}, ignore_index=True)
+            elif types == 0:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
+                print(df)
+                return df
+            else:
+                df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Error"}, ignore_index=True)
             break
 
-        if timed_out_count == TRIES:
-            print("*    *    * Request timed out.")
-            df = df.append({'Hop Count': ttl, 'Try': 0, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
-            consecutive_timeouts += 1
-            if consecutive_timeouts >= 3:
-                break
-            continue
+        if consecutive_timeouts >= 3:
+            break
 
-        icmpHeader = recvPacket[20:28]
-        types, code, checksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
-
-        try:
-            router_hostname = gethostbyaddr(addr[0])[0]
-        except herror:
-            router_hostname = "hostname not returnable"
-
-        if types == 11:
-            df = df.append({'Hop Count': ttl, 'Try': 0, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "TTL Exceeded"}, ignore_index=True)
-        elif types == 3:
-            df = df.append({'Hop Count': ttl, 'Try': 0, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Destination Unreachable"}, ignore_index=True)
-        elif types == 0:
-            df = df.append({'Hop Count': ttl, 'Try': 0, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Echo Reply"}, ignore_index=True)
-            print(df)
-            return df
-        else:
-            df = df.append({'Hop Count': ttl, 'Try': 0, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Error"}, ignore_index=True)
-        break
-
-    if consecutive_timeouts >= 3:
-        break
-
-print(df)
-return df
+    print(df)
+    return df
 
 if __name__ == '__main__':
     get_route("google.co.il")
+
+Ungraded
+Python Programming: Traceroute
+Inactive Submission
+Student
+ Queena Zhang
+Total Points
+- / 100 pts
+
+Autograder Score
+70.0 / 100.0
+Failed Tests
+test_traceroute_1 (test_simple.Test) (70/100)
