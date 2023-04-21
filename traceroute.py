@@ -14,7 +14,6 @@ TIMEOUT = 2.0
 TRIES = 1
 
 def checksum(string):
-# In this function  make the checksum of our packet
     csum = 0
     countTo = (len(string) // 2) * 2
     count = 0
@@ -36,38 +35,25 @@ def checksum(string):
     answer = answer >> 8 | (answer << 8 & 0xff00)
     return answer
 
-
 def build_packet():
-    #Fill in start
-    # In the sendOnePing() method of the ICMP Ping exercise ,firstly the header of 
-    # packet to be sent was made, secondly the checksum was appended to the header and
-    # then finally the complete packet was sent to the destination.
-
-    # Make the header in a similar way to the ping exercise.
     myChecksum = 0
     myID = os.getpid() & 0xFFFF
     header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, myChecksum, myID, 1)
     data = struct.pack("d", time.time())
-    # Append checksum to the header.
     myChecksum = checksum(header + data)
     if sys.platform == 'darwin':
-        myChecksum = socket.htons(myChecksum) & 0xffff
-        #Convert 16-bit integers from host to network byte order.
+        myChecksum = htons(myChecksum) & 0xffff
     else:
         myChecksum = htons(myChecksum)
-    # Don’t send the packet yet , just return the final packet in this function.
+
     header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, myChecksum, myID, 1)
-    #Fill in end
-
-    # So the function ending should look like this
-
     packet = header + data
     return packet
-
 
 def get_route(hostname):
     df = pd.DataFrame(columns=['Hop Count', 'Try', 'IP', 'Hostname', 'Response Code'])
     destAddr = gethostbyname(hostname)
+    consecutive_timeouts = 0
 
     for ttl in range(1, MAX_HOPS):
         for tries in range(TRIES):
@@ -84,7 +70,7 @@ def get_route(hostname):
                 startedSelect = time.time()
                 whatReady = select.select([mySocket], [], [], TIMEOUT)
                 howLongInSelect = (time.time() - startedSelect)
-                if not whatReady[0]:  # No response received
+                if not whatReady[0]:
                     timeout_occurred = True
             except Exception as e:
                 print(e)
@@ -93,14 +79,22 @@ def get_route(hostname):
             if timeout_occurred:
                 print("*    *    * Request timed out.")
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                consecutive_timeouts += 1
+                if consecutive_timeouts >= 3:
+                    break
                 continue
 
             try:
                 recvPacket, addr = mySocket.recvfrom(1024)
                 timeReceived = time.time()
                 timeLeft = TIMEOUT - howLongInSelect
+                consecutive_timeouts = 0
             except timeout:
+                
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': "", 'Hostname': "", 'Response Code': "Request timed out"}, ignore_index=True)
+                consecutive_timeouts += 1
+                if consecutive_timeouts >= 3:
+                    break
                 continue
 
             icmpHeader = recvPacket[20:28]
@@ -121,13 +115,12 @@ def get_route(hostname):
             else:
                 df = df.append({'Hop Count': ttl, 'Try': tries, 'IP': addr[0], 'Hostname': router_hostname, 'Response Code': "Error"}, ignore_index=True)
             break
+
+        if consecutive_timeouts >= 3:
+            break
+
     print(df)
     return df
 
-
-
 if __name__ == '__main__':
     get_route("google.co.il")
-
-
-
